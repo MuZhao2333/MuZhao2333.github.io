@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Explore real MolFLAE and MolAlign3D checkpoints: encode molecular structures, inspect geometric latent variables, decode, and interpolate.">
+  <title>Molecular interpolation · Molecular Lab · Zitao Chen</title>
+  <link rel="stylesheet" href="../style.css">
+  <script src="../config.js" defer></script><script src="../vendor/3Dmol-min.js" defer></script><script src="../app.js" defer></script>
+</head>
+<body data-experiment="interpolation">
+  <header class="topbar"><a href="/">Zitao Chen<span>.</span></a><a href="/">Academic homepage ↗</a></header>
+  <main>
+    <div class="intro"><p class="eyebrow">MOLECULAR LAB · EXPERIMENT 04</p><h1>Molecular interpolation</h1><p>Explore a path between two encoded molecules.<br>Linearly mix latent geometry and complete decoder features between two endpoints, with optional proper-rotation alignment.</p><div class="connection" id="connection" role="status">Connecting to model service…</div></div>
+    <div class="workspace">
+      <nav class="experiment-nav" aria-label="Experiments"><a href="../">All experiments</a><a href="../encode-decode/">01 · Encode + decode</a><a href="../wander/">02 · Latent space wander</a><a href="../atom-edit/">03 · Add or remove atoms</a><a href="../interpolation/" aria-current="page">04 · Molecular interpolation</a><a href="../swap/">05 · Swap Zx and Zh</a></nav>
+      <fieldset id="experiment-controls" disabled>
+        <legend class="sr-only">Model and molecular input</legend>
+        <div class="settings"><label>Model<select id="model"><option value="molalign3d">MolAlign3D · UniMol-conditioned</option><option value="molflae">MolFLAE · geometric autoencoder</option></select></label><label>Decoder steps<select id="steps"><option selected>50</option><option>100</option><option>200</option></select></label><label>Random seed<input id="seed" type="number" min="0" max="2147483647" value="42"></label><label id="frames-field">Frames<select id="frames"><option>3</option><option selected>5</option><option>7</option><option>11</option></select></label></div>
+        <p class="model-description" id="model-description">8 geometric nodes · 16 structural + 64 UniMol channels per node</p>
+        <div class="inputs paired" id="inputs">
+          <div class="molecule-input"><label for="smiles-a" id="input-label-a">Molecule A · SMILES</label><textarea id="smiles-a" rows="2" spellcheck="false">CC(=O)Oc1ccccc1C(=O)O</textarea><div class="examples"><span>Try</span><button type="button" data-example="aspirin">Aspirin</button><button type="button" data-example="caffeine">Caffeine</button><button type="button" data-example="phenacetin">Phenacetin</button></div><div class="upload"><label class="upload-label" for="sdf-a">Or upload 3D SDF / MOL<input type="file" id="sdf-a" accept=".sdf,.mol"></label><span id="file-name-a">No file selected</span><button type="button" id="clear-file-a" hidden>Clear file</button></div></div>
+          <div class="molecule-input" id="input-b"><label for="smiles-b">Molecule B · SMILES</label><textarea id="smiles-b" rows="2" spellcheck="false">CCOc1ccc(NC(C)=O)cc1</textarea><p class="input-note">SMILES are converted to one seeded 3D conformer. Uploaded 3D coordinates are used directly.</p><div class="upload"><label class="upload-label" for="sdf-b">Or upload 3D SDF / MOL<input type="file" id="sdf-b" accept=".sdf,.mol"></label><span id="file-name-b">No file selected</span><button type="button" id="clear-file-b" hidden>Clear file</button></div></div>
+        </div>
+        <label class="check" id="alignment-field"><input type="checkbox" id="align" checked>Align endpoint B to A using corresponding latent global nodes (proper rotation)</label>
+        <div class="actions"><button type="button" id="run" class="primary">Encode endpoints + interpolate</button><button type="button" id="encode-only" hidden>Encode only</button><button type="button" id="decode" hidden disabled>Decode cached latent</button><span class="input-limits">2–80 heavy atoms · C, N, O, F, P, S, Cl, Br, I</span></div>
+      </fieldset>
+      <div class="job-status" id="job-status" hidden><div><span id="job-message" role="status" aria-live="polite">Waiting…</span><span id="elapsed"></span></div><progress id="job-progress" max="1" value="0"></progress></div>
+      <p id="error" class="error" role="alert" hidden></p>
+    </div>
+
+    <section class="results" aria-labelledby="results-heading"><div class="result-heading"><h2 id="results-heading">Structures &amp; geometric latent</h2><span id="result-summary">Run an experiment to view model outputs.</span></div>
+      <div class="viewer-grid four" id="viewer-grid">
+        <article class="view-card"><div class="view-title"><h3 id="viewer-a-label">Input molecule</h3><span id="input-atoms"></span></div><div class="viewer" id="viewer-a" role="img" aria-label="Interactive 3D input molecular structure"><span class="view-placeholder">Input structure appears here</span></div><p id="input-smiles" class="structure-caption">Rotate with the mouse or touch. Scroll / pinch to zoom.</p></article>
+        <article class="view-card" id="view-card-b"><div class="view-title"><h3>Endpoint B</h3><span id="input-atoms-b"></span></div><div class="viewer" id="viewer-b" role="img" aria-label="Interactive 3D endpoint B molecular structure"><span class="view-placeholder">Endpoint B appears here</span></div><p id="input-smiles-b" class="structure-caption"></p></article>
+          <article class="view-card"><div class="view-title"><h3>Latent geometry · Zx</h3><span id="node-count">8 global nodes</span></div><div class="viewer" id="viewer-z" role="img" aria-label="Interactive 3D latent global nodes, which are geometric representations rather than atoms"><span class="view-placeholder">Encoded geometric nodes appear here</span></div><p id="latent-caption" class="structure-caption">Actual global-node positions. Hover or tap to identify nodes; nearby nodes can overlap.</p></article>
+        <article class="view-card"><div class="view-title"><h3 id="decoded-label">Decoded molecule</h3><span id="decoded-atoms"></span></div><div class="viewer" id="viewer-out" role="img" aria-label="Interactive 3D decoded molecular structure"><span class="view-placeholder">Decoder output appears here</span></div><p id="decoded-smiles" class="structure-caption">Actual model output, with bonds inferred by the original postprocessor.</p></article>
+      </div>
+      <div class="frame-control" id="frame-control" hidden><label for="frame-slider">Experiment frame <output id="alpha" for="frame-slider">t = 0.00</output></label><input type="range" id="frame-slider" min="0" max="10" value="0" step="1"><div><span id="sequence-start">First frame</span><span id="sequence-end">Last frame</span></div></div>
+      <div class="result-actions"><label class="check"><input type="checkbox" id="overlay" disabled>Overlay input on reconstruction</label><button type="button" id="download-sdf" disabled>Download SDF</button><button type="button" id="download-latent" disabled>Download latent JSON</button><button type="button" id="download-path" hidden>Download all frames SDF</button></div>
+      <div class="metrics" id="metrics" aria-live="polite"></div>
+    </section>
+
+    <section class="features" aria-labelledby="features-heading"><div class="result-heading"><div><h2 id="features-heading">Latent features</h2><p>Rows are global nodes; columns are feature channels.</p></div><label class="feature-selector">Display<select id="feature-kind"><option value="features">Structural features · Zh</option><option value="decoder_features">Complete decoder conditioning</option></select></label></div><div class="heatmap-shell"><canvas id="heatmap" height="195" role="img" aria-label="Latent feature heatmap, awaiting encoder output"></canvas><p id="heatmap-empty">Encode a molecule to inspect its feature matrix.</p></div><div class="heatmap-legend"><span id="feature-shape">No encoding yet</span><span><i></i>Negative → zero → positive</span><output id="feature-value">Hover to inspect a feature</output></div></section>
+
+    <details class="run-details"><summary>Run details &amp; interpretation</summary><pre id="run-details">No run yet.</pre><p>These are the original trained checkpoints. The decoder predicts atom types and coordinates; chemical bonds are inferred afterward. RDKit sanitization is a software validity check, not a guarantee of chemical plausibility. RMSD is reported only when RDKit can find a graph correspondence between the input and decoded molecule.</p><p>MolAlign3D uses the original split-UniMol epoch-14 checkpoint: 8 nodes, 16 structural channels per node. The 512-dimensional UniMol representation is split into eight 64-channel blocks; each decoder node receives 80 channels. Linearly mix latent geometry and complete decoder features between two endpoints, with optional proper-rotation alignment. The decoder seed is fixed across frames. Generated results may change chemical topology or fail sanitization.</p></details>
+    <footer><span>MolFLAE · MolAlign3D · Zitao Chen</span><span>Inference runs on the model server. Molecules and results are held temporarily in memory.</span></footer>
+  </main>
+</body></html>

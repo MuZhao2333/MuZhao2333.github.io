@@ -21,7 +21,7 @@ GitHub 用户名：**MuZhao2333**。目标仓库：**MuZhao2333.github.io**。�
 
 主页的 **Research in focus** 提供 MolAlign3D 和 SEAL-BG 两个代表项目的研究问题、方法介绍、个人贡献和相关链接。点击 **My contribution & research context** 可展开细节；论文列表也增加了内容摘要。
 
-MolAlign3D 与 MolFLAE 的论文和项目入口指向独立的真实模型 Demo：`https://muzhao2333.github.io/models/`。主页不再包含原理演示区。
+MolAlign3D 与 MolFLAE 的论文和项目入口指向 Molecular Lab：`https://muzhao2333.github.io/models/`。其下 encode-decode、wander、atom-edit、interpolation、swap 各有独立子页面，调用服务器上的真实模型。MolAlign3D 固定为 split-UniMol epoch 14，结构 latent 为 8 × 16；MolFLAE 为 10 × 32。
 
 ## 发布到 GitHub Pages
 

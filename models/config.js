@@ -1,3 +1,2 @@
-// Leave empty when the homepage and model service share the same host.
-// For GitHub Pages, set this to the HTTPS origin of your publicly accessible API.
-window.MOLECULAR_DEMO_API_BASE = "";
+// Same-origin server previews use a relative API; GitHub Pages uses the public HTTPS endpoint.
+window.MOLECULAR_DEMO_API_BASE = location.hostname.endsWith("github.io") ? "https://mounting-canvas-fighting-symbol.trycloudflare.com" : "";

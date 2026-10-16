@@ -2,7 +2,8 @@
 (() => {
   const $=id=>document.getElementById(id);
   const API=(window.MOLECULAR_DEMO_API_BASE||"").replace(/\/$/,"");
-  const state={mode:"reconstruction",busy:false,connected:false,encoded:null,current:null,reconstruction:null,path:null,latent:null,models:[],viewers:{},files:{a:"",b:""}};
+  const mode=document.body.dataset.experiment||"reconstruction";
+  const state={mode,busy:false,connected:false,encoded:null,current:null,reconstruction:null,path:null,latent:null,models:[],viewers:{},files:{a:"",b:""}};
   const examples={aspirin:"CC(=O)Oc1ccccc1C(=O)O",caffeine:"Cn1c(=O)c2c(ncn2C)n(C)c1=O",phenacetin:"CCOc1ccc(NC(C)=O)cc1"};
   const palette=["#2f6b91","#5e927e","#bc865b","#787f9f","#6b9da8","#a17d87","#7f9660","#b69d65","#6b8cbe","#9b8f79"];
 
@@ -32,8 +33,9 @@
   }
   function modelDescription() {
     $('model-description').textContent=$('model').value==="molalign3d"?
-      "10 geometric nodes · 128 structural features + 512 UniMol features per node":
+      "8 geometric nodes · 16 structural + 64 UniMol channels per node · original split-UniMol checkpoint":
       "10 geometric nodes · 32 structural features per node · no external semantic conditioning";
+    $('node-count').textContent=$('model').value==="molalign3d"?"8 global nodes":"10 global nodes";
   }
   function setMode(mode) {
     if(state.busy)return;
@@ -88,7 +90,10 @@
     const v=viewer('viewer-z');
     const model=v.addModel();
     model.addAtoms(latent.positions.map((point,i)=>({x:point[0],y:point[1],z:point[2],elem:'C',serial:i+1,bonds:[],bondOrder:[]})));
-    latent.positions.forEach((point,i)=>model.setStyle({index:i},{sphere:{radius:.4,color:palette[i%palette.length]}}));
+    const pairs=latent.positions.flatMap((p,i)=>latent.positions.slice(i+1).map(q=>Math.hypot(...p.map((v,j)=>v-q[j]))));
+    const extent=Math.max(...pairs,0);
+    const radius=extent>0?Math.min(.45,extent*.025):.02;
+    latent.positions.forEach((point,i)=>model.setStyle({index:i},{sphere:{radius,color:palette[i%palette.length]}}));
     const labelNode=(atom,view)=>{
       view.removeAllLabels();
       view.addLabel(`G${atom.index+1}`,{position:{x:atom.x,y:atom.y,z:atom.z},fontSize:12,fontColor:'#547084',backgroundColor:'white',backgroundOpacity:.85,borderThickness:0,inFront:true});
@@ -98,6 +103,8 @@
     model.setClickable({},true,labelNode);
     v.zoomTo();v.zoom(.75);v.resize();v.render();
     $('viewer-z').setAttribute('aria-label',`${latent.positions.length} learned geometric global nodes. Structural feature shape ${latent.feature_shape.join(' by ')}.`);
+    $('node-count').textContent=`${latent.positions.length} global nodes`;
+    $('latent-caption').textContent=`Actual Zx coordinates · extent ${extent.toPrecision(3)} · minimum node distance ${Math.min(...pairs).toPrecision(3)}. Marker size adapts; coordinates are unchanged.`;
     drawHeatmap();
   }
   function drawOutput() {
@@ -146,33 +153,35 @@
       entries.push(['Aligned RMSD',result.decoded.aligned_rmsd===null?'No graph correspondence':`${result.decoded.aligned_rmsd.toFixed(3)} Å`]);
     }
     metrics(entries);
-    $('run-details').textContent=JSON.stringify({model:result.model,checkpoint:state.models.find(m=>m.id===result.model)?.checkpoint,seed:result.seed,structural_shape:result.latent.feature_shape,decoder_shape:result.latent.decoder_shape,input_source:result.input.source,decoder_steps:result.decoded?.steps,encode_seconds:result.encode_seconds,decode_seconds:result.decode_seconds,rdkit_valid:result.decoded?.rdkit_valid,bond_perception_succeeded:result.decoded?.bond_perception_succeeded},null,2);
+    $('run-details').textContent=JSON.stringify({model:result.model,provenance:result.provenance,seed:result.seed,structural_shape:result.latent.feature_shape,decoder_shape:result.latent.decoder_shape,input_source:result.input.source,decoder_steps:result.decoded?.steps,encode_seconds:result.encode_seconds,decode_seconds:result.decode_seconds,rdkit_valid:result.decoded?.rdkit_valid,bond_perception_succeeded:result.decoded?.bond_perception_succeeded},null,2);
     $('download-sdf').disabled=!result.decoded?.molblock;
     $('download-latent').disabled=false;
     controls();
   }
   function renderPath(result) {
     state.path=result;
-    $('input-atoms').textContent=`${result.a.atom_count} atoms`;
-    $('input-atoms-b').textContent=`${result.b.atom_count} atoms`;
-    $('input-smiles').textContent=result.a.smiles;
-    $('input-smiles-b').textContent=`${result.b.smiles} · ${result.alignment}`;
-    drawMolecule('viewer-a',result.a);drawMolecule('viewer-b',result.b);
+    const first=result.a||result.input;
+    $('input-atoms').textContent=`${first.atom_count} atoms`;
+    $('input-smiles').textContent=first.smiles;
+    drawMolecule('viewer-a',first);
+    if(result.b){$('input-atoms-b').textContent=`${result.b.atom_count} atoms`;$('input-smiles-b').textContent=`${result.b.smiles} · ${result.alignment}`;drawMolecule('viewer-b',result.b);}
     $('frame-slider').max=String(result.frames.length-1);$('frame-slider').value='0';
     $('frame-control').hidden=false;$('download-path').hidden=false;
     $('result-summary').textContent=`${result.model_name} · ${result.frames.length} decoded frames · ${result.runtime_seconds.toFixed(2)} s`;
-    $('run-details').textContent=JSON.stringify({model:result.model,seed:result.seed,steps:result.steps,frames:result.frames.length,alignment:result.alignment,sampling:result.sampling,runtime_seconds:result.runtime_seconds},null,2);
+    $('run-details').textContent=JSON.stringify({model:result.model,provenance:result.provenance,seed:result.seed,steps:result.steps,frames:result.frames.length,alignment:result.alignment,sampling:result.sampling,space:result.space,step_size:result.step_size,runtime_seconds:result.runtime_seconds},null,2);
+    $('sequence-start').textContent=result.frames[0].label;
+    $('sequence-end').textContent=result.frames.at(-1).label;
     showFrame();
   }
   function showFrame() {
     if(!state.path)return;
     const frame=state.path.frames[Number($('frame-slider').value)];
-    $('alpha').value=`t = ${frame.alpha.toFixed(2)}`;
-    state.current={model:state.path.model,input:state.path.a,decoded:frame.decoded,latent:frame.latent};
+    $('alpha').value=frame.label;
+    state.current={model:state.path.model,input:state.path.a||state.path.input,decoded:frame.decoded,latent:frame.latent};
     drawLatent(frame.latent);drawOutput();
     $('decoded-atoms').textContent=`${frame.decoded.atom_count} atoms`;
     $('decoded-smiles').textContent=outputCaption(frame.decoded);
-    metrics([['t',frame.alpha.toFixed(2)],['Output atoms',String(frame.decoded.predicted_atom_count)],['Structural latent',frame.latent.feature_shape.join(' × ')],['RDKit sanitization',frame.decoded.rdkit_valid?'Passed':'Failed']]);
+    metrics([['Frame',frame.label],['Output atoms',String(frame.decoded.predicted_atom_count)],['Structural latent',frame.latent.feature_shape.join(' × ')],['RDKit sanitization',frame.decoded.rdkit_valid?'Passed':'Failed']]);
     $('download-sdf').disabled=!frame.decoded.molblock;$('download-latent').disabled=false;
   }
 
@@ -222,7 +231,12 @@
       const common={model:$('model').value,steps:Number($('steps').value),seed:Number($('seed').value)};
       let payload;
       if(operation==='decode')payload={encoding_id:state.encoded,steps:common.steps,seed:common.seed};
-      else if(operation==='interpolate')payload={...common,a:await moleculeInput('a'),b:await moleculeInput('b'),frames:Number($('frames').value),align:$('align').checked};
+      else if(operation==='interpolate'||operation==='swap'){
+        payload={...common,a:await moleculeInput('a'),b:await moleculeInput('b'),align:$('align').checked};
+        if(operation==='interpolate')payload.frames=Number($('frames').value);
+      }
+      else if(operation==='wander')payload={...common,...await moleculeInput('a'),frames:Number($('frames').value),step_size:Number($('step-size').value),space:$('walk-space').value};
+      else if(operation==='atom-edit')payload={...common,...await moleculeInput('a'),radius:Number($('atom-radius').value)};
       else payload={...common,...await moleculeInput('a')};
       const {job_id}=await request(operation,{method:'POST',body:JSON.stringify(payload)});
       let job;
@@ -233,7 +247,7 @@
         if(Date.now()-start>600000)throw new Error('This request is taking too long. Reload to check the model service.');
       } while(job.status==='queued'||job.status==='running');
       if(job.status==='error')throw new Error(job.message);
-      if(operation==='interpolate')renderPath(job.result);
+      if(job.result.frames)renderPath(job.result);
       else {
         const result=operation==='decode'?{...state.current,...job.result}:job.result;
         renderReconstruction(result);
@@ -246,12 +260,13 @@
     const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   $('download-sdf').addEventListener('click',()=>download(`${state.current.decoded.molblock}\n$$$$\n`,`${state.current.model}-decoded.sdf`,'chemical/x-mdl-sdfile'));
-  $('download-latent').addEventListener('click',()=>download(JSON.stringify({model:state.current.model,latent:state.latent},null,2),`${state.current.model}-latent.json`,'application/json'));
-  $('download-path').addEventListener('click',()=>download(state.path.frames.map(frame=>`${frame.decoded.molblock}\n> <alpha>\n${frame.alpha}\n\n$$$$\n`).join(''),`${state.path.model}-interpolation.sdf`,'chemical/x-mdl-sdfile'));
+  $('download-latent').addEventListener('click',()=>download(JSON.stringify({model:state.current.model,experiment:state.mode,provenance:state.current.provenance||state.path?.provenance,latent:state.latent},null,2),`${state.current.model}-latent.json`,'application/json'));
+  $('download-path').addEventListener('click',()=>download(state.path.frames.map(frame=>`${frame.decoded.molblock}\n> <experiment_frame>\n${frame.label}\n\n$$$$\n`).join(''),`${state.path.model}-${state.path.kind}.sdf`,'chemical/x-mdl-sdfile'));
   $('overlay').addEventListener('change',drawOutput);
   $('feature-kind').addEventListener('change',drawHeatmap);
   $('frame-slider').addEventListener('input',showFrame);
-  $('run').addEventListener('click',()=>run(state.mode==='interpolation'?'interpolate':'reconstruct'));
+  const operations={reconstruction:'reconstruct',interpolation:'interpolate',wander:'wander','atom-edit':'atom-edit',swap:'swap'};
+  $('run').addEventListener('click',()=>run(operations[state.mode]));
   $('encode-only').addEventListener('click',()=>run('encode'));
   $('decode').addEventListener('click',()=>run('decode'));
   document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.mode)));
@@ -268,6 +283,7 @@
     $(`clear-file-${suffix}`).addEventListener('click',()=>{state.files[suffix]='';$(`sdf-${suffix}`).value='';$(`file-name-${suffix}`).textContent='No file selected';$(`clear-file-${suffix}`).hidden=true;invalidate();});
   }
   $('model').addEventListener('change',()=>{modelDescription();invalidate();});
+  modelDescription();
   function resizeViewers() {
     Object.entries(state.viewers).forEach(([id,v])=>{if($(id).offsetWidth){v.resize();v.render();}});drawHeatmap();
   }
