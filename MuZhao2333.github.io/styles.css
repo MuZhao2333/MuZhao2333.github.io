@@ -1,0 +1,61 @@
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body { margin: 0; background: #fff; color: #222; font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.65; }
+main { max-width: 850px; margin: 48px auto 36px; padding: 0 24px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 32px; font-weight: 500; line-height: 1.3; margin-bottom: 14px; }
+h2 { font-size: 22px; font-weight: 500; line-height: 1.4; margin-bottom: 16px; padding-bottom: 5px; border-bottom: 1px solid #ddd; }
+h3 { font-size: 15px; font-weight: 600; line-height: 1.55; }
+p { margin-bottom: 12px; }
+a { color: #1764a0; text-decoration: none; overflow-wrap: anywhere; }
+a:hover { text-decoration: underline; }
+a:focus-visible, summary:focus-visible { outline: 2px solid #1764a0; outline-offset: 3px; }
+strong { font-weight: 600; }
+sup { font-size: .72em; line-height: 0; }
+header { margin-bottom: 26px; }
+header p { margin-bottom: 10px; }
+.contact-links { font-size: 14px; }
+section + section { margin-top: 30px; }
+.note, .date, .muted { color: #666; }
+.note { margin: -7px 0 16px; font-size: 13px; }
+.publication-list { padding-left: 23px; margin: 0; }
+.publication { padding-left: 4px; margin-bottom: 20px; }
+.publication:last-child { margin-bottom: 0; }
+.publication h3 { margin-bottom: 3px; }
+.publication p { margin-bottom: 0; font-size: 14px; }
+.venue { font-style: italic; }
+.author-details { font-size: 13px; margin-top: 3px; }
+.author-details summary { cursor: pointer; color: #1764a0; width: max-content; }
+.author-details p { font-size: 13px; margin-top: 5px; color: #555; }
+.experience-list { list-style: none; padding: 0; margin: 0; }
+.experience-item { margin-bottom: 18px; }
+.experience-item:last-child { margin-bottom: 0; }
+.experience-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 20px; }
+.date { font-size: 13px; font-weight: 400; }
+.experience-heading .date { flex-shrink: 0; }
+.experience-item p { margin-bottom: 2px; font-size: 14px; }
+.experience-description { color: #555; }
+.honors-list { margin: 0; padding-left: 21px; }
+.honors-list li { padding-left: 2px; margin-bottom: 5px; font-size: 14px; }
+footer { margin-top: 36px; padding-top: 13px; border-top: 1px solid #ddd; color: #777; font-size: 12px; }
+@media (max-width: 600px) {
+  main { margin: 28px auto 25px; padding: 0 20px; }
+  body { font-size: 14px; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 20px; }
+  h3 { font-size: 14px; }
+  .experience-heading { display: block; }
+  .experience-heading .date { display: block; margin: 1px 0 3px; font-size: 12px; }
+  .publication p, .experience-item p, .honors-list li { font-size: 13px; }
+  .publication { padding-left: 1px; }
+  .contact-links { font-size: 13px; }
+}
+@media print {
+  main { max-width: none; margin: 0; padding: 0; }
+  body { font-size: 11px; }
+  h1 { font-size: 25px; }
+  h2 { font-size: 18px; break-after: avoid; }
+  .publication, .experience-item { break-inside: avoid; }
+  a { color: inherit; }
+  .author-details { display: none; }
+}
