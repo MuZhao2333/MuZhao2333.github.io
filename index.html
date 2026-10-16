@@ -15,15 +15,13 @@
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="demos.css">
   <link rel="stylesheet" href="visual.css">
-  <script src="demos.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="site-bar">
     <a href="#top" class="site-name"><span class="brand-mark" aria-hidden="true">zc</span>Zitao Chen<span class="brand-dot" aria-hidden="true">.</span></a>
-    <nav aria-label="Main navigation"><a href="#about">About</a><a href="#research">Research</a><a href="#publications">Publications</a><a href="#demos">Demos</a><a href="#experience">Experience</a><a href="#contact">Contact</a></nav>
+    <nav aria-label="Main navigation"><a href="#about">About</a><a href="#research">Research</a><a href="#publications">Publications</a><a href="#experience">Experience</a><a href="#contact">Contact</a></nav>
   </div>
   <main id="main">
     <header class="hero" id="top">
@@ -56,7 +54,7 @@
     </section>
 
     <section id="research" aria-labelledby="research-heading">
-      <div class="section-heading"><div><p class="eyebrow">SELECTED PROJECTS</p><h2 id="research-heading">Research in focus</h2></div><a class="section-link" href="#demos">Explore the demos <span aria-hidden="true">↓</span></a></div>
+      <div class="section-heading"><div><p class="eyebrow">SELECTED PROJECTS</p><h2 id="research-heading">Research in focus</h2></div><a class="section-link" href="models/index.html">Explore the models <span aria-hidden="true">↗</span></a></div>
       <p class="section-intro">Selected work on molecular representations, geometric generation, and statistical mechanics.</p>
       <div class="live-demo-banner"><div><span class="live-demo-label">TRAINED MODEL EXPLORER</span><h3>Try MolFLAE &amp; MolAlign3D</h3><p>Input a molecule, inspect its encoded geometry and features, reconstruct it, or interpolate between two molecules.</p></div><a href="models/index.html">Open model demo <span aria-hidden="true">↗</span></a></div>
       <div class="project-grid">
@@ -66,7 +64,7 @@
         </article>
         <article class="project-card" id="project-seal">
           <div class="project-visual boltzmann-visual"><img src="assets/project-boltzmann.svg" width="360" height="160" alt="Conceptual illustration: an asymmetric energy landscape and the probability density concentrated near its minima."><span>Energy landscape → molecular ensembles</span></div>
-          <div class="project-content"><div class="project-meta"><span>BOLTZMANN GENERATION</span><span class="project-status status-review">Under review</span></div><h3>SEAL-BG</h3><p class="project-question">How can geometric generative models support tractable likelihoods and free-energy estimation?</p><p>SEAL-BG combines SE(3)-equivariant geometric perception with local-coordinate densities for scalable Boltzmann generation.</p><details class="project-details"><summary>My contribution &amp; research context</summary><p>I developed SEAL-BG during my visit to the Ma Lab at Carnegie Mellon University, as part of research on tractable-likelihood models for Boltzmann distributions and free-energy calculations.</p><p>The accompanying demo uses a one-dimensional potential to explain the relationship between energy, temperature, and equilibrium probability.</p></details><div class="project-links"><a href="#publications">Manuscript details <span aria-hidden="true">↓</span></a><a href="#demo-boltzmann" data-open-demo="boltzmann">Distribution demo <span aria-hidden="true">↓</span></a></div></div>
+          <div class="project-content"><div class="project-meta"><span>BOLTZMANN GENERATION</span><span class="project-status status-review">Under review</span></div><h3>SEAL-BG</h3><p class="project-question">How can geometric generative models support tractable likelihoods and free-energy estimation?</p><p>SEAL-BG combines SE(3)-equivariant geometric perception with local-coordinate densities for scalable Boltzmann generation.</p><details class="project-details"><summary>My contribution &amp; research context</summary><p>I developed SEAL-BG during my visit to the Ma Lab at Carnegie Mellon University, as part of research on tractable-likelihood models for Boltzmann distributions and free-energy calculations.</p></details><div class="project-links"><a href="#publications">Manuscript details <span aria-hidden="true">↓</span></a></div></div>
         </article>
       </div>
     </section>
@@ -80,7 +78,6 @@
           <p class="authors"><strong>Zitao Chen</strong>, Jiatong Ji, Shuming Liu, Jian Ma</p>
           <p class="venue">Under review</p>
           <p class="paper-summary">Equivariant geometric perception and local-coordinate density modeling for scalable Boltzmann generation and free-energy estimation.</p>
-          <p class="demo-paper-link"><a href="#demo-boltzmann" data-open-demo="boltzmann">Interactive illustration ↓</a></p>
         </li>
         <li class="publication">
           <h3>MolGAN: Few-Step 3D Molecule Generation with Hierarchical Reasoning</h3>
@@ -110,29 +107,6 @@
           <p class="demo-paper-link"><a href="models/index.html">Model demo ↗</a></p>
         </li>
       </ol>
-    </section>
-
-    <section id="demos" aria-labelledby="demos-heading">
-      <div class="section-heading"><div><p class="eyebrow">INTERACTIVE EXPLORATIONS</p><h2 id="demos-heading">Project Demos</h2></div><span class="section-count">Try it in your browser</span></div>
-      <p class="demo-intro">Explore the relationship between energy, temperature, and probability with an interactive toy energy landscape.</p>
-      <noscript><p class="demo-caption">Enable JavaScript to use the interactive controls. The descriptions and all academic content are available without it.</p></noscript>
-
-      <article class="demo-panel" id="demo-boltzmann" aria-labelledby="boltzmann-heading">
-        <h3 id="boltzmann-heading">From energy to a Boltzmann distribution</h3>
-        <p class="demo-description">Change the temperature of an asymmetric double well. Lower temperatures concentrate probability near the lower-energy basin.</p>
-        <div class="demo-context"><p><strong>The idea.</strong> Boltzmann distributions assign probability according to both energy and temperature. A model of the distribution can support sampling and thermodynamic estimation.</p><p><strong>Try this.</strong> Compare a cold and a warm system. Watch how probability moves between basins, and use new samples to see the difference between a density and a finite sample.</p></div>
-        <div class="demo-interactive" hidden>
-          <svg id="boltzmann-figure" class="demo-figure boltzmann-figure" role="img" aria-labelledby="boltzmann-title boltzmann-desc"><title id="boltzmann-title">Energy and equilibrium probability density</title><desc id="boltzmann-desc">Two plots share reaction coordinate x. The top shows the fixed potential; the bottom shows the normalized Boltzmann density and sampled positions.</desc></svg>
-          <div class="demo-controls boltzmann-controls">
-            <label for="temperature">Temperature kᵦT <output id="temperature-value" for="temperature">0.60</output><input id="temperature" type="range" min="0.2" max="2" step="0.05" value="0.6"></label>
-            <button type="button" id="resample">Draw 80 new samples</button>
-          </div>
-          <p class="demo-readout" id="boltzmann-readout" role="status"></p>
-          <div class="demo-presets" role="group" aria-label="Temperature presets"><span>Compare temperatures</span><button type="button" data-temperature="0.2">Cold · 0.20</button><button type="button" data-temperature="0.6">Moderate · 0.60</button><button type="button" data-temperature="2">Warm · 2.00</button></div>
-          <p class="free-energy-readout" id="free-energy-readout"></p>
-        </div>
-        <p class="demo-caption">Toy potential U(x) = 3(x² − 1)² + 0.6x on [−1.6, 1.6]; p(x) ∝ exp(−U(x) / kᵦT), numerically normalized on this interval. All quantities use reduced units. Inspired by the topic of SEAL-BG; samples come from numerical inverse-CDF sampling, not the trained model.</p>
-      </article>
     </section>
 
     <section id="experience" aria-labelledby="experience-heading">

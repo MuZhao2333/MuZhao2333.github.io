@@ -1,17 +1,15 @@
 # Zitao Chen · 学术主页
 
-依据提供的简历整理的英文静态学术主页，采用雾蓝背景、靛紫色几何主视觉、杏橙色点缀和衬线标题，适用于 GitHub Pages。桌面展示双栏个人介绍、双栏项目卡片和时间线，手机自动切换为单栏。无需 Node.js、npm、Jekyll 或构建步骤，浏览器直接打开 `index.html` 即可预览。项目演示使用本地 JavaScript；禁用 JavaScript 时，学术内容和演示介绍仍可阅读。
+依据提供的简历整理的英文静态学术主页，采用雾蓝背景、靛紫色几何主视觉、杏橙色点缀和衬线标题，适用于 GitHub Pages。桌面展示双栏个人介绍、双栏项目卡片和时间线，手机自动切换为单栏。无需 Node.js、npm、Jekyll 或构建步骤，浏览器直接打开 `index.html` 即可预览。主页无需 JavaScript 即可阅读；独立模型演示页面使用 JavaScript 连接推理服务。
 
 GitHub 用户名：**MuZhao2333**。目标仓库：**MuZhao2333.github.io**。发布成功后的主页地址：**https://muzhao2333.github.io/**。
 
 ## 文件
 
-- `index.html`：个人介绍、研究方向、近期亮点、代表项目、论文、交互演示、研究经历、教育荣誉、社区服务和联系方式。
+- `index.html`：个人介绍、研究方向、近期亮点、代表项目、论文、研究经历、教育荣誉、社区服务和联系方式。
 - `styles.css`：配色、字体、布局和手机适配。
 - `layout.css`：完整展示版的导航、首页、项目卡片、时间线及响应式样式。
 - `visual.css`：雾蓝与靛紫色视觉主题、衬线字体层级、分区配色及手机布局。
-- `demos.js`：Boltzmann 原理演示的交互与数值计算。
-- `demos.css`：演示区样式，独立于主页现有排版。
 - `assets/Zitao_Chen_CV.pdf`：你提供的原始简历副本，主页的 CV 链接会打开此文件。
 - `assets/favicon.svg`：浏览器标签页图标。
 - `assets/geometry-study.svg`、`assets/research-map.svg`、`assets/project-*.svg`：为主页绘制的几何主视觉与研究概念示意图，不是论文中的实验图或模型输出。主视觉直接使用 SVG 绘制，不依赖外部图片服务。
@@ -23,15 +21,7 @@ GitHub 用户名：**MuZhao2333**。目标仓库：**MuZhao2333.github.io**。�
 
 主页的 **Research in focus** 提供 MolAlign3D 和 SEAL-BG 两个代表项目的研究问题、方法介绍、个人贡献和相关链接。点击 **My contribution & research context** 可展开细节；论文列表也增加了内容摘要。
 
-主页 **Project Demos** 区域保留 Boltzmann 分布原理演示，进入该区即可直接操作。MolAlign3D 与 MolFLAE 的论文和项目入口指向真实模型 Demo。
-
-**Boltzmann sampling**：改变温度 kᵦT，观察非对称双势阱的归一化 Boltzmann 概率密度与左右区域概率。使用有限区间的数值积分和逆 CDF 采样；按钮可重新抽取 80 个样本。提供冷、中、暖温度预设，并通过 −kᵦT ln(P(right)/P(left)) 计算两区域的自由能差，使用约化单位。
-
-这是教学用途的轻量原理示例，使用玩具势能系统，不代表 SEAL-BG 的模型推理或实验结果。后续可在 `.demo-panel` 内加入真实视频、截图、项目链接或模型服务。
-
-可直接链接到具体演示：
-
-- `https://muzhao2333.github.io/#demo-boltzmann`
+MolAlign3D 与 MolFLAE 的论文和项目入口指向独立的真实模型 Demo：`https://muzhao2333.github.io/models/`。主页不再包含原理演示区。
 
 ## 发布到 GitHub Pages
 
@@ -53,7 +43,6 @@ GitHub 用户名：**MuZhao2333**。目标仓库：**MuZhao2333.github.io**。�
 - **简历**：替换 `assets/Zitao_Chen_CV.pdf`，保持文件名一致即可。
 - **头像**：现版不放头像。如果需要，上传照片到 `assets` 后在 `<header>` 中加入图片即可。
 - **GitHub / Google Scholar / ORCID**：现版已添加你提供的 GitHub 账号 MuZhao2333。取得 Google Scholar 或 ORCID 的准确网址后，可以在 `contact-links` 中按现有格式添加普通链接。
-- **演示**：在 `index.html` 的 `id="demos"` 区域更新介绍，在 `demos.js` 修改计算逻辑。请同时保留清晰的数据和模型来源说明。
 
 ## 内容说明
 

@@ -95,6 +95,7 @@ main>.about-section { margin-top:45px; }
 .authors { color:#778394; line-height:1.9; }
 .authors strong { color:#344b60; }
 .venue { color:#4e7290; font-size:11px!important; font-weight:500; margin-top:5px!important; font-style:normal; }
+.publication .demo-paper-link { margin-top:7px; font-size:11px; }
 .publication .paper-summary { color:#6a798c; margin-top:8px; font-size:12px; line-height:1.9; }
 .author-details { font-size:11px; margin-top:4px; }
 .author-details p { font-size:11px; margin-top:7px; color:#728093; padding:10px 13px; background:#f4f7fa; border-radius:3px; }
