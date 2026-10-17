@@ -1,0 +1,7 @@
+backend/runtime/
+backend/.venv/
+backend/logs/
+__pycache__/
+*.py[cod]
+.env
+.env.*

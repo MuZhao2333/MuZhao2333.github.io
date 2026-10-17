@@ -17,7 +17,7 @@ GitHub 用户名：**MuZhao2333**。目标仓库：**MuZhao2333.github.io**。�
 
 ## 项目演示
 
-新增 **Model demo / Open model demo** 入口，连接 MolFLAE 和 MolAlign3D 的真实模型页面。完整后端位于相邻的 `molecular-model-demo` 交付目录，部署在 `chenzitao@10.0.0.49:~/Cls_vae/web_demo`。通过 SSH 转发可访问 `http://127.0.0.1:8098/models/`。服务器自托管主页和 API 默认同源；如果主页继续使用 GitHub Pages，需要在 `models/config.js` 配置公网 HTTPS 后端地址，并设置后端允许的来源。GitHub Pages 单独发布时不能运行模型推理。
+模型演示的 HTTP 接口、请求队列、模型路由和部署脚本位于本仓库的 [backend/](backend/README.md)。模型代码与 checkpoint 独立放在服务器的 `MolAlign3D` 仓库中，由后端导入其 Python 包。GitHub Pages 发布静态页面，推理服务在服务器运行，公网入口配置在 `models/config.js`。
 
 主页的 **Research in focus** 提供 MolAlign3D 和 SEAL-BG 两个代表项目的研究问题、方法介绍、个人贡献和相关链接。点击 **My contribution & research context** 可展开细节；论文列表也增加了内容摘要。
 
