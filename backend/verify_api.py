@@ -9,6 +9,20 @@ import urllib.request
 from pathlib import Path
 
 
+def assert_close(actual, expected):
+    """GPU scatter reductions can differ by a few float32 rounding units."""
+    if isinstance(actual, dict):
+        assert actual.keys() == expected.keys()
+        for key in actual: assert_close(actual[key], expected[key])
+    elif isinstance(actual, list):
+        assert len(actual) == len(expected)
+        for a, b in zip(actual, expected): assert_close(a, b)
+    elif isinstance(actual, float):
+        assert math.isclose(actual, expected, abs_tol=2e-4, rel_tol=2e-5), (actual, expected)
+    else:
+        assert actual == expected
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", required=True)
@@ -74,17 +88,18 @@ def main():
     for model in ("molalign3d", "molflae"):
         decoded = run("decode", {"encoding_id": saved[model]["encoding_id"]}, model)
         reconstructed = run("reconstruct", {"model": model, "smiles": aspirin}, model)
-        assert decoded["decoded"]["coordinates"] == reconstructed["decoded"]["coordinates"]
-        assert saved[model]["latent"] == reconstructed["latent"]
+        assert_close(decoded["decoded"]["coordinates"], reconstructed["decoded"]["coordinates"])
+        assert decoded["decoded"]["atomic_numbers"] == reconstructed["decoded"]["atomic_numbers"]
+        assert_close(saved[model]["latent"], reconstructed["latent"])
         common = {"model": model, "smiles": aspirin}
         walk = run("wander", {**common, "frames": 2}, model)
-        assert walk["frames"][0]["latent"] == saved[model]["latent"]
+        assert_close(walk["frames"][0]["latent"], saved[model]["latent"])
         assert walk["frames"][1]["latent"]["positions"] != walk["frames"][0]["latent"]["positions"]
         assert walk["frames"][1]["latent"]["features"] != walk["frames"][0]["latent"]["features"]
         edit = run("atom-edit", {**common, "radius": 1}, model)
         count = saved[model]["input"]["atom_count"]
         assert [frame["decoded"]["predicted_atom_count"] for frame in edit["frames"]] == [count - 1, count, count + 1]
-        assert all(frame["latent"] == saved[model]["latent"] for frame in edit["frames"])
+        for frame in edit["frames"]: assert_close(frame["latent"], saved[model]["latent"])
         pair = {"model": model, "a": {"smiles": aspirin}, "b": {"smiles": second}}
         interpolation = run("interpolate", {**pair, "frames": 3}, model)
         assert [frame["alpha"] for frame in interpolation["frames"]] == [0, 0.5, 1]

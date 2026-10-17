@@ -72,6 +72,23 @@ class SwapRequest(BaseModel):
     seed:int=Field(default=42,ge=0,le=2147483647)
     align:bool=True
 
+class LatentSelection(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    model:Literal["molflae","molalign3d"]="molalign3d"
+    point_id:str=Field(min_length=1,max_length=100)
+
+class LatentNavigation(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    model:Literal["molflae","molalign3d"]="molalign3d"
+    point_id:Optional[str]=Field(default=None,min_length=1,max_length=100)
+    encoding_id:Optional[str]=Field(default=None,pattern=r"^[a-f0-9]{32}$")
+    map_version:str=Field(min_length=16,max_length=16)
+    delta_x:float=Field(default=0,ge=-3,le=3,allow_inf_nan=False)
+    delta_y:float=Field(default=0,ge=-3,le=3,allow_inf_nan=False)
+    frames:int=Field(default=5,ge=2,le=11)
+    steps:int=Field(default=100,ge=10,le=200)
+    seed:int=Field(default=42,ge=0,le=2147483647)
+
 def submit(operation,args):
     with guard:
         now=time.time()
@@ -122,12 +139,30 @@ def models():
         "conditioning":info.get("conditioning","No external semantic conditioning"),
         "loaded":engine is not None and key in engine.models}
         for key,info in MODEL_INFO.items()],"max_atoms":80,"max_frames":21,
+        "configured_device":os.environ.get("MOLECULAR_DEVICE","auto"),
         "device":str(engine.device) if engine is not None else "Initialized on first inference"}
 
 @app.get("/api/health")
 def health():
     return {"status":"ok","worker":"serialized","pending":sum(j["status"] in ("queued","running") for j in jobs.values()),
-            "backend_repository":"MuZhao2333.github.io","backend_revision":os.environ.get("BACKEND_CODE_REVISION","unrecorded")}
+            "backend_repository":"MuZhao2333.github.io","backend_revision":os.environ.get("BACKEND_CODE_REVISION","unrecorded"),
+            "configured_device":os.environ.get("MOLECULAR_DEVICE","auto"),
+            "device":str(engine.device) if engine is not None else None}
+
+@app.post("/api/latent-select",status_code=202)
+def latent_select(request:LatentSelection):
+    data=request.model_dump();data['key']=data.pop('model')
+    return submit('latent_select',data)
+
+@app.post("/api/latent-locate",status_code=202)
+def latent_locate(request:EncodeRequest):
+    data=request.model_dump();data['key']=data.pop('model');data.pop('steps')
+    return submit('latent_locate',data)
+
+@app.post("/api/latent-navigate",status_code=202)
+def latent_navigate(request:LatentNavigation):
+    data=request.model_dump();data['key']=data.pop('model')
+    return submit('latent_navigate',data)
 
 @app.post("/api/encode",status_code=202)
 def encode(request:EncodeRequest):

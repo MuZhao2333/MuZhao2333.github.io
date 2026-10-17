@@ -65,6 +65,7 @@
     document.querySelectorAll('[data-mode]').forEach(button=>{button.disabled=state.busy;});
     $('decode').disabled=!state.encoded;
     $('overlay').disabled=!state.current?.decoded||state.mode!=="reconstruction";
+    document.dispatchEvent(new CustomEvent('molecular-controls',{detail:{busy:state.busy,connected:state.connected}}));
   }
   function invalidate() {
     state.encoded=null;
@@ -221,6 +222,7 @@
   }
   function renderReconstruction(result) {
     stopPlayback();state.path=null;state.selectedNode=null;
+    $('frame-control').hidden=true;$('download-path').hidden=true;
     state.current=result;
     state.reconstruction=result;
     state.encoded=result.encoding_id;
@@ -237,13 +239,14 @@
     }
     $('decoded-smiles').textContent=outputCaption(result.decoded);
     $('result-summary').textContent=`${result.model_name||result.model} · real checkpoint output`;
-    const entries=[['Structural latent',result.latent.feature_shape.join(' × ')],['Decoder input',result.latent.decoder_shape.join(' × ')],['Encode',`${result.encode_seconds.toFixed(2)} s`]];
+    const entries=[['Structural latent',result.latent.feature_shape.join(' × ')],['Decoder input',result.latent.decoder_shape.join(' × ')],
+      [result.kind==='latent-selection'?'Encoding':'Encode',result.kind==='latent-selection'?'Reference cache':`${result.encode_seconds.toFixed(2)} s`]];
     if(result.decoded) {
       entries.push(['Decode',`${result.decode_seconds.toFixed(2)} s`]);
       entries.push(['Aligned RMSD',result.decoded.aligned_rmsd===null?'No graph correspondence':`${result.decoded.aligned_rmsd.toFixed(3)} Å`]);
     }
     metrics(entries);
-    $('run-details').textContent=JSON.stringify({model:result.model,provenance:result.provenance,seed:result.seed,structural_shape:result.latent.feature_shape,decoder_shape:result.latent.decoder_shape,input_source:result.input.source,decoder_steps:result.decoded?.steps,encode_seconds:result.encode_seconds,decode_seconds:result.decode_seconds,rdkit_valid:result.decoded?.rdkit_valid,bond_perception_succeeded:result.decoded?.bond_perception_succeeded},null,2);
+    $('run-details').textContent=JSON.stringify({model:result.model,provenance:result.provenance,atlas:result.atlas,seed:result.seed,structural_shape:result.latent.feature_shape,decoder_shape:result.latent.decoder_shape,input_source:result.input.source,decoder_steps:result.decoded?.steps,encode_seconds:result.encode_seconds,decode_seconds:result.decode_seconds,rdkit_valid:result.decoded?.rdkit_valid,bond_perception_succeeded:result.decoded?.bond_perception_succeeded},null,2);
     $('download-sdf').disabled=!result.decoded?.molblock;
     $('download-latent').disabled=false;
     controls();
@@ -258,11 +261,11 @@
     $('frame-slider').max=String(result.frames.length-1);$('frame-slider').value='0';
     $('frame-control').hidden=false;$('download-path').hidden=false;
     $('result-summary').textContent=`${result.model_name} · ${result.frames.length} decoded frames · ${result.runtime_seconds.toFixed(2)} s`;
-    $('run-details').textContent=JSON.stringify({model:result.model,provenance:result.provenance,seed:result.seed,steps:result.steps,frames:result.frames.length,alignment:result.alignment,sampling:result.sampling,space:result.space,step_size:result.step_size,runtime_seconds:result.runtime_seconds},null,2);
+    $('run-details').textContent=JSON.stringify({model:result.model,provenance:result.provenance,seed:result.seed,steps:result.steps,frames:result.frames.length,alignment:result.alignment,sampling:result.sampling,navigation:result.navigation,space:result.space,step_size:result.step_size,runtime_seconds:result.runtime_seconds},null,2);
     $('sequence-start').textContent=result.frames[0].label;
     $('sequence-end').textContent=result.frames.at(-1).label;
     buildFrameStrip();$('save-scene').disabled=false;
-    showFrame(false);
+    showFrame(false);updateFloatingControls();
   }
   function showFrame(preserve=true) {
     if(!state.path)return;
@@ -274,6 +277,8 @@
     $('decoded-smiles').textContent=outputCaption(frame.decoded);
     metrics([['Frame',frame.label],['Output atoms',String(frame.decoded.predicted_atom_count)],['Structural latent',frame.latent.feature_shape.join(' × ')],['RDKit sanitization',frame.decoded.rdkit_valid?'Passed':'Failed']]);
     $('download-sdf').disabled=!frame.decoded.molblock;$('download-latent').disabled=false;
+    const floating=$('floating-slider');if(floating){floating.max=$('frame-slider').max;floating.value=$('frame-slider').value;$('floating-frame-label').textContent=frame.label;}
+    document.dispatchEvent(new CustomEvent('molecular-frame',{detail:{frame,index:Number($('frame-slider').value),result:state.path}}));
   }
 
   function matrixScale(matrix) {
@@ -361,7 +366,7 @@
     const smiles=$(`smiles-${suffix}`).value.trim();if(!smiles)throw new Error('Enter a SMILES string or upload a 3D molecule.');
     return {smiles,molblock:''};
   }
-  async function run(operation) {
+  async function run(operation,overrides=null) {
     if(state.busy||!state.connected)return;
     stopPlayback();document.body.classList.add('is-computing');
     state.busy=true;controls();$('error').hidden=true;$('job-status').hidden=false;$('job-progress').value=0;
@@ -370,7 +375,8 @@
     try {
       const common={model:$('model').value,steps:Number($('steps').value),seed:Number($('seed').value)};
       let payload;
-      if(operation==='decode')payload={encoding_id:state.encoded,steps:common.steps,seed:common.seed};
+      if(overrides)payload={...common,...overrides};
+      else if(operation==='decode')payload={encoding_id:state.encoded,steps:common.steps,seed:common.seed};
       else if(operation==='interpolate'||operation==='swap'){
         payload={...common,a:await moleculeInput('a'),b:await moleculeInput('b'),align:$('align').checked};
         if(operation==='interpolate')payload.frames=Number($('frames').value);
@@ -378,6 +384,7 @@
       else if(operation==='wander')payload={...common,...await moleculeInput('a'),frames:Number($('frames').value),step_size:Number($('step-size').value),space:$('walk-space').value};
       else if(operation==='atom-edit')payload={...common,...await moleculeInput('a'),radius:Number($('atom-radius').value)};
       else payload={...common,...await moleculeInput('a')};
+      if(operation==='latent-select')payload={model:common.model,point_id:overrides.point_id};
       const {job_id}=await request(operation,{method:'POST',body:JSON.stringify(payload)});
       let job;
       do {
@@ -392,15 +399,16 @@
         const result=operation==='decode'?{...state.current,...job.result}:job.result;
         renderReconstruction(result);
       }
+      document.dispatchEvent(new CustomEvent('molecular-result',{detail:{operation,result:job.result}}));
     } catch(error){showError(error);$('job-message').textContent='Experiment did not complete.';}
-    finally{clearInterval(clock);state.busy=false;document.body.classList.remove('is-computing');controls();}
+    finally{clearInterval(clock);state.busy=false;document.body.classList.remove('is-computing');controls();updateFloatingControls();}
   }
   function download(content,name,type) {
     const url=URL.createObjectURL(new Blob([content],{type}));
     const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   $('download-sdf').addEventListener('click',()=>download(`${state.current.decoded.molblock}\n$$$$\n`,`${state.current.model}-decoded.sdf`,'chemical/x-mdl-sdfile'));
-  $('download-latent').addEventListener('click',()=>download(JSON.stringify({model:state.current.model,experiment:state.mode,provenance:state.current.provenance||state.path?.provenance,latent:state.latent},null,2),`${state.current.model}-latent.json`,'application/json'));
+  $('download-latent').addEventListener('click',()=>download(JSON.stringify({model:state.current.model,experiment:state.mode,provenance:state.current.provenance||state.path?.provenance,navigation:state.path?.navigation,seed:state.path?.seed||state.current.seed,steps:state.path?.steps,latent:state.latent},null,2),`${state.current.model}-latent.json`,'application/json'));
   $('download-path').addEventListener('click',()=>download(state.path.frames.map(frame=>`${frame.decoded.molblock}\n> <experiment_frame>\n${frame.label}\n\n$$$$\n`).join(''),`${state.path.model}-${state.path.kind}.sdf`,'chemical/x-mdl-sdfile'));
   $('overlay').addEventListener('change',()=>drawOutput(true));
   $('feature-kind').addEventListener('change',drawHeatmap);
@@ -442,10 +450,12 @@
   function stopPlayback() {
     clearInterval(state.playTimer);state.playTimer=null;state.playing=false;
     $('play-frames').textContent='▶ Play';$('play-frames').setAttribute('aria-label','Play sequence');$('play-frames').setAttribute('aria-pressed','false');
+    if($('floating-play')){$('floating-play').textContent='▶';$('floating-play').setAttribute('aria-label','Play sequence');$('floating-play').setAttribute('aria-pressed','false');}
   }
   function playFrames() {
     if(!state.path||state.busy)return;
     state.playing=true;$('play-frames').textContent='Ⅱ Pause';$('play-frames').setAttribute('aria-label','Pause sequence');$('play-frames').setAttribute('aria-pressed','true');
+    $('floating-play').textContent='Ⅱ';$('floating-play').setAttribute('aria-label','Pause sequence');$('floating-play').setAttribute('aria-pressed','true');
     clearInterval(state.playTimer);
     state.playTimer=setInterval(()=>{
       $('frame-slider').value=String((Number($('frame-slider').value)+1)%state.path.frames.length);showFrame();
@@ -500,8 +510,8 @@
   });
 
   const operations={reconstruction:'reconstruct',interpolation:'interpolate',wander:'wander','atom-edit':'atom-edit',swap:'swap'};
-  $('run').addEventListener('click',()=>run(operations[state.mode]));
-  $('encode-only').addEventListener('click',()=>run('encode'));
+  $('run').addEventListener('click',()=>state.mode==='latent-space'?document.dispatchEvent(new CustomEvent('latent-navigate-request')):run(operations[state.mode]));
+  $('encode-only').addEventListener('click',()=>run(state.mode==='latent-space'?'latent-locate':'encode'));
   $('decode').addEventListener('click',()=>run('decode'));
   document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.mode)));
   document.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{
@@ -516,16 +526,36 @@
     });
     $(`clear-file-${suffix}`).addEventListener('click',()=>{state.files[suffix]='';$(`sdf-${suffix}`).value='';$(`file-name-${suffix}`).textContent='No file selected';$(`clear-file-${suffix}`).hidden=true;invalidate();});
   }
-  $('model').addEventListener('change',()=>{modelDescription();invalidate();});
+  $('model').addEventListener('change',()=>{stopPlayback();modelDescription();invalidate();document.dispatchEvent(new CustomEvent('molecular-model',{detail:{model:$('model').value}}));});
   modelDescription();
   function resizeViewers() {
     withCameraMuted(()=>Object.entries(state.viewers).forEach(([id,v])=>{
       if($(id).offsetWidth){v.resize();v.render();rememberView(id,v.getView());}
-    }));drawHeatmap();
+    }));drawHeatmap();updateFloatingControls();
   }
   window.addEventListener('resize',resizeViewers);
   if('ResizeObserver' in window)new ResizeObserver(resizeViewers).observe($('viewer-grid'));
   request('models').then(data=>{
-    state.models=data.models;state.connected=true;$('connection').textContent='Model service connected · real checkpoint inference';$('connection').className='connection connected';controls();
+    state.models=data.models;state.connected=true;
+    const device=data.device==='Initialized on first inference'?(data.configured_device==='cuda'?'GPU ready':'Ready'):data.device;
+    $('connection').textContent=`Model service connected · ${device} · real checkpoint inference`;$('connection').className='connection connected';controls();
   }).catch(error=>{$('connection').textContent='Model service unavailable';$('connection').className='connection failed';showError(error);});
+  const floating=document.createElement('div');floating.id='floating-controls';floating.className='floating-controls';floating.hidden=true;
+  floating.innerHTML='<span class="floating-kicker">EXPERIMENT FRAME</span><button type="button" id="floating-prev" aria-label="Previous frame">←</button><button type="button" id="floating-play" aria-label="Play sequence" aria-pressed="false">▶</button><input type="range" id="floating-slider" min="0" max="1" value="0" step="1" aria-label="Experiment frame"><span id="floating-frame-label"></span><button type="button" id="floating-next" aria-label="Next frame">→</button>';
+  document.body.append(floating);
+  $('floating-slider').addEventListener('input',()=>{stopPlayback();$('frame-slider').value=$('floating-slider').value;showFrame();});
+  $('floating-prev').addEventListener('click',()=>$('previous-frame').click());
+  $('floating-next').addEventListener('click',()=>$('next-frame').click());
+  $('floating-play').addEventListener('click',()=>$('play-frames').click());
+  function updateFloatingControls() {
+    const dock=$('floating-controls');if(!dock)return;
+    const full=$('frame-control'),view=$('viewer-grid').getBoundingClientRect(),rect=$('frame-slider').getBoundingClientRect();
+    const fullVisible=!full.hidden&&rect.top>=0&&rect.bottom<=innerHeight;
+    dock.hidden=!state.path||full.hidden||fullVisible||view.bottom<0||view.top>innerHeight;
+    if(!dock.hidden){$('floating-slider').max=$('frame-slider').max;$('floating-slider').value=$('frame-slider').value;$('floating-frame-label').textContent=state.path.frames[Number($('frame-slider').value)].label;}
+    dock.querySelectorAll('button,input').forEach(control=>{control.disabled=state.busy;});
+  }
+  window.addEventListener('scroll',updateFloatingControls,{passive:true});
+  function clearSequence(){stopPlayback();state.path=null;$('frame-control').hidden=true;$('download-path').hidden=true;updateFloatingControls();}
+  window.MolecularLab=Object.freeze({run,request,showError,clearSequence,thumbnail,get busy(){return state.busy;},get model(){return $('model').value;}});
 })();

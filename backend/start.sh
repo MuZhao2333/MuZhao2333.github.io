@@ -19,9 +19,14 @@ if [[ -n "$(git -C "$model_dir" status --porcelain)" ]]; then
   echo "Commit model source changes before deployment to record its revision." >&2
   exit 1
 fi
-"$backend_python" - "$model_dir" <<'PY'
+"$backend_python" - "$model_dir" "${MOLECULAR_DEVICE:-cuda}" "${BACKEND_CUDA_VISIBLE_DEVICES:-0}" <<'PY'
 import pathlib
 import sys
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = sys.argv[3]
+import torch
+if sys.argv[2] == "cuda" and not torch.cuda.is_available():
+    raise RuntimeError("GPU serving is configured but the selected CUDA device is unavailable")
 import fastapi
 import uvicorn
 from molalign3d import engine as molalign3d_engine
@@ -32,7 +37,7 @@ for module in (molalign3d_engine, molflae_engine):
         raise RuntimeError(f"Unexpected model source: {module.__file__}")
     print(f"Using {module.__name__}: {module.__file__}")
 PY
-nohup env CUDA_VISIBLE_DEVICES="${BACKEND_CUDA_VISIBLE_DEVICES:--1}" MOLECULAR_DEVICE="${MOLECULAR_DEVICE:-cpu}" MOLECULAR_CPU_THREADS="${MOLECULAR_CPU_THREADS:-4}" MODEL_CODE_REVISION="$model_revision" BACKEND_CODE_REVISION="$backend_revision" HOMEPAGE_ROOT="${HOMEPAGE_ROOT:-$(dirname "$backend_dir")}" DEMO_ALLOWED_ORIGINS="${DEMO_ALLOWED_ORIGINS:-https://muzhao2333.github.io}" \
+nohup env CUDA_VISIBLE_DEVICES="${BACKEND_CUDA_VISIBLE_DEVICES:-0}" MOLECULAR_DEVICE="${MOLECULAR_DEVICE:-cuda}" MOLECULAR_CPU_THREADS="${MOLECULAR_CPU_THREADS:-4}" MODEL_CODE_REVISION="$model_revision" BACKEND_CODE_REVISION="$backend_revision" HOMEPAGE_ROOT="${HOMEPAGE_ROOT:-$(dirname "$backend_dir")}" DEMO_ALLOWED_ORIGINS="${DEMO_ALLOWED_ORIGINS:-https://muzhao2333.github.io}" \
   "$backend_python" -m uvicorn server:app --app-dir "$backend_dir" --host "${BACKEND_HOST:-127.0.0.1}" --port "${BACKEND_PORT:-7868}" --workers 1 \
   > "$backend_runtime/server.log" 2>&1 < /dev/null &
 echo "$!" > "$backend_runtime/server.pid"

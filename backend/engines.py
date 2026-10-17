@@ -7,10 +7,8 @@ models and encodings. Use one worker: both engines set process-wide RNG seeds.
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import os
-from pathlib import Path
 
 import torch
 
@@ -49,9 +47,13 @@ class Engine:
         for key, package in PACKAGES.items():
             logging.getLogger(__name__).info("%s inference source: %s", key, package.__file__)
         requested = os.environ.get("MOLECULAR_DEVICE", "auto")
+        if requested == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError("GPU inference is configured but CUDA is unavailable")
         self.device = torch.device("cpu" if requested == "cpu" or not torch.cuda.is_available() else "cuda:0")
         self._engines = {}
         self.verified = set()
+        from latent_space import LatentSpace
+        self.latent_space = LatentSpace()
 
     @property
     def models(self):
@@ -77,6 +79,8 @@ class Engine:
             **result.get("provenance", {}),
             **{field: value for field, value in MODEL_INFO[key].items() if field not in ("name", "config")},
             "weights_verified": key in self.verified,
+            "device": str(self.device),
+            "accelerator": torch.cuda.get_device_name(self.device) if self.device.type == "cuda" else "CPU",
         }
         return result
 
@@ -109,3 +113,16 @@ class Engine:
 
     def swap(self, key, **args):
         return self._run("swap", key, **args)
+
+    def latent_select(self, key, point_id, progress=lambda *args:None):
+        self._get_engine(key)
+        return self._stamp(self.latent_space.select(key, point_id, PACKAGES[key]), key)
+
+    def latent_locate(self, key, **args):
+        result = self.encode(key, **args)
+        encoded = self._get_engine(key).encodings[result['encoding_id']]
+        return self.latent_space.locate(key, result, encoded)
+
+    def latent_navigate(self, key, **args):
+        result = self.latent_space.navigate(key, self._get_engine(key), **args)
+        return self._stamp(result, key)
