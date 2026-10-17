@@ -11,8 +11,8 @@
     "large": "images/01-large.webp",
     "large_width": 2400,
     "large_height": 1714,
-    "captured_at": null,
-    "captured_at_source": null
+    "captured_at": "2019-06-07",
+    "captured_at_source": "Photographer"
   },
   {
     "id": "02",
@@ -206,8 +206,8 @@
     "large": "images/14-large.webp",
     "large_width": 2400,
     "large_height": 2000,
-    "captured_at": null,
-    "captured_at_source": null
+    "captured_at": "2019-02-16",
+    "captured_at_source": "Photographer"
   },
   {
     "id": "15",
@@ -296,8 +296,8 @@
     "large": "images/20-large.webp",
     "large_width": 2400,
     "large_height": 2400,
-    "captured_at": null,
-    "captured_at_source": null
+    "captured_at": "2018-09-23",
+    "captured_at_source": "Photographer"
   },
   {
     "id": "21",
@@ -311,8 +311,8 @@
     "large": "images/21-large.webp",
     "large_width": 2400,
     "large_height": 2000,
-    "captured_at": null,
-    "captured_at_source": null
+    "captured_at": "2018-10-14",
+    "captured_at_source": "Photographer"
   },
   {
     "id": "22",
@@ -326,7 +326,7 @@
     "large": "images/22-large.webp",
     "large_width": 2399,
     "large_height": 2400,
-    "captured_at": null,
-    "captured_at_source": null
+    "captured_at": "2018-09-16",
+    "captured_at_source": "Photographer"
   }
 ]

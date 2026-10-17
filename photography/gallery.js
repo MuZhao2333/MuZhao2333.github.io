@@ -25,8 +25,9 @@
     $('photo-counter').textContent=`${String(list.indexOf(item)+1).padStart(2,'0')} / ${String(list.length).padStart(2,'0')}`;
     $('photo-description').textContent=thumb.alt;
     const capture=$('photo-capture'),capturedAt=item.dataset.capturedAt;
+    const [captureDate,captureTime]=capturedAt?capturedAt.split('T'):[];
     capture.hidden=!capturedAt;
-    capture.textContent=capturedAt?`Taken · ${capturedAt.slice(0,10).replaceAll('-','.')} · ${capturedAt.slice(11)}`:'';
+    capture.textContent=captureDate?`Taken · ${captureDate.replaceAll('-','.')}${captureTime?` · ${captureTime}`:''}`:'';
     if(capturedAt)capture.dateTime=capturedAt;
     else capture.removeAttribute('datetime');
     image.alt=thumb.alt;
