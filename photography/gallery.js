@@ -24,6 +24,11 @@
     setZoom(false);image.style.opacity='0';$('photo-status').hidden=false;$('photo-status').textContent='Loading photograph…';$('zoom-photo').disabled=true;
     $('photo-counter').textContent=`${String(list.indexOf(item)+1).padStart(2,'0')} / ${String(list.length).padStart(2,'0')}`;
     $('photo-description').textContent=thumb.alt;
+    const capture=$('photo-capture'),capturedAt=item.dataset.capturedAt;
+    capture.hidden=!capturedAt;
+    capture.textContent=capturedAt?`Taken · ${capturedAt.slice(0,10).replaceAll('-','.')} · ${capturedAt.slice(11)}`:'';
+    if(capturedAt)capture.dateTime=capturedAt;
+    else capture.removeAttribute('datetime');
     image.alt=thumb.alt;
     image.onload=()=>{if(version!==loadVersion)return;image.style.opacity='1';$('photo-status').hidden=true;$('zoom-photo').disabled=false;};
     image.onerror=()=>{if(version!==loadVersion)return;$('photo-status').textContent='This photograph could not load. Try the next image.';};

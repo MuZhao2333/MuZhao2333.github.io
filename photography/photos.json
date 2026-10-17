@@ -10,7 +10,9 @@
     "thumb_height": 629,
     "large": "images/01-large.webp",
     "large_width": 2400,
-    "large_height": 1714
+    "large_height": 1714,
+    "captured_at": null,
+    "captured_at_source": null
   },
   {
     "id": "02",
@@ -23,7 +25,9 @@
     "thumb_height": 880,
     "large": "images/02-large.webp",
     "large_width": 1637,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2024-11-04T16:21:52",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "03",
@@ -36,7 +40,9 @@
     "thumb_height": 880,
     "large": "images/03-large.webp",
     "large_width": 1600,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2024-11-04T15:35:55",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "04",
@@ -49,7 +55,9 @@
     "thumb_height": 528,
     "large": "images/04-large.webp",
     "large_width": 2400,
-    "large_height": 1440
+    "large_height": 1440,
+    "captured_at": "2020-08-07T19:11:13",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "05",
@@ -62,7 +70,9 @@
     "thumb_height": 880,
     "large": "images/05-large.webp",
     "large_width": 2208,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2020-07-29T18:18:45",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "06",
@@ -75,7 +85,9 @@
     "thumb_height": 880,
     "large": "images/06-large.webp",
     "large_width": 2400,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2020-01-05T21:13:40",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "07",
@@ -88,7 +100,9 @@
     "thumb_height": 880,
     "large": "images/07-large.webp",
     "large_width": 1600,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2024-11-04T16:02:37",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "08",
@@ -101,7 +115,9 @@
     "thumb_height": 880,
     "large": "images/08-large.webp",
     "large_width": 1600,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2024-11-04T16:04:09",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "09",
@@ -114,7 +130,9 @@
     "thumb_height": 558,
     "large": "images/09-large.webp",
     "large_width": 2400,
-    "large_height": 1521
+    "large_height": 1521,
+    "captured_at": "2018-08-29T16:36:43",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "10",
@@ -127,7 +145,9 @@
     "thumb_height": 880,
     "large": "images/10-large.webp",
     "large_width": 1600,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2024-11-04T15:43:08",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "11",
@@ -140,7 +160,9 @@
     "thumb_height": 704,
     "large": "images/11-large.webp",
     "large_width": 2400,
-    "large_height": 1920
+    "large_height": 1920,
+    "captured_at": "2020-08-07T17:26:53",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "12",
@@ -153,7 +175,9 @@
     "thumb_height": 587,
     "large": "images/12-large.webp",
     "large_width": 2400,
-    "large_height": 1600
+    "large_height": 1600,
+    "captured_at": "2018-08-21T17:00:01",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "13",
@@ -166,7 +190,9 @@
     "thumb_height": 880,
     "large": "images/13-large.webp",
     "large_width": 1744,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2024-11-16T14:03:06",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "14",
@@ -179,7 +205,9 @@
     "thumb_height": 733,
     "large": "images/14-large.webp",
     "large_width": 2400,
-    "large_height": 2000
+    "large_height": 2000,
+    "captured_at": null,
+    "captured_at_source": null
   },
   {
     "id": "15",
@@ -192,7 +220,9 @@
     "thumb_height": 704,
     "large": "images/15-large.webp",
     "large_width": 2400,
-    "large_height": 1920
+    "large_height": 1920,
+    "captured_at": "2020-08-07T19:19:18",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "16",
@@ -205,7 +235,9 @@
     "thumb_height": 880,
     "large": "images/16-large.webp",
     "large_width": 1770,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2024-11-16T14:26:46",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "17",
@@ -218,7 +250,9 @@
     "thumb_height": 880,
     "large": "images/17-large.webp",
     "large_width": 2400,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": "2020-08-03T22:32:48",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "18",
@@ -231,7 +265,9 @@
     "thumb_height": 570,
     "large": "images/18-large.webp",
     "large_width": 2400,
-    "large_height": 1555
+    "large_height": 1555,
+    "captured_at": "2021-02-12T20:47:44",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "19",
@@ -244,7 +280,9 @@
     "thumb_height": 587,
     "large": "images/19-large.webp",
     "large_width": 2400,
-    "large_height": 1600
+    "large_height": 1600,
+    "captured_at": "2018-04-07T16:34:47",
+    "captured_at_source": "EXIF DateTimeOriginal"
   },
   {
     "id": "20",
@@ -257,7 +295,9 @@
     "thumb_height": 880,
     "large": "images/20-large.webp",
     "large_width": 2400,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": null,
+    "captured_at_source": null
   },
   {
     "id": "21",
@@ -270,7 +310,9 @@
     "thumb_height": 733,
     "large": "images/21-large.webp",
     "large_width": 2400,
-    "large_height": 2000
+    "large_height": 2000,
+    "captured_at": null,
+    "captured_at_source": null
   },
   {
     "id": "22",
@@ -283,6 +325,8 @@
     "thumb_height": 880,
     "large": "images/22-large.webp",
     "large_width": 2399,
-    "large_height": 2400
+    "large_height": 2400,
+    "captured_at": null,
+    "captured_at_source": null
   }
 ]
