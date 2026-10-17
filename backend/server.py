@@ -216,7 +216,7 @@ def get_job(job_id:str):
 class PublicSiteFiles(StaticFiles):
     async def get_response(self, path, scope):
         first = path.lstrip("/").split("/", 1)[0]
-        public = {"", ".", "index.html", "styles.css", "layout.css", "visual.css", "assets", "models", "robots.txt", "sitemap.xml"}
+        public = {"", ".", "index.html", "styles.css", "layout.css", "visual.css", "assets", "models", "photography", "robots.txt", "sitemap.xml"}
         if first not in public:
             raise HTTPException(404, "Not found")
         return await super().get_response(path, scope)
