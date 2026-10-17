@@ -2,7 +2,7 @@
 set -euo pipefail
 backend_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$backend_dir"
-model_dir="${MOLRESEARCH_ROOT:-$(dirname "$(dirname "$backend_dir")")/MolAlign3D}"
+model_dir="${MODEL_ROOT:-$(dirname "$(dirname "$backend_dir")")/MolAlign3D}"
 backend_python="${BACKEND_PYTHON:-$model_dir/.venv/bin/python}"
 backend_runtime="${BACKEND_RUNTIME:-$backend_dir/runtime}"
 mkdir -p "$backend_runtime"
@@ -32,7 +32,7 @@ for module in (molalign3d_engine, molflae_engine):
         raise RuntimeError(f"Unexpected model source: {module.__file__}")
     print(f"Using {module.__name__}: {module.__file__}")
 PY
-nohup env CUDA_VISIBLE_DEVICES="${BACKEND_CUDA_VISIBLE_DEVICES:--1}" MOLRESEARCH_DEVICE="${MOLRESEARCH_DEVICE:-cpu}" MOLRESEARCH_CPU_THREADS="${MOLRESEARCH_CPU_THREADS:-4}" MODEL_CODE_REVISION="$model_revision" BACKEND_CODE_REVISION="$backend_revision" HOMEPAGE_ROOT="${HOMEPAGE_ROOT:-$(dirname "$backend_dir")}" DEMO_ALLOWED_ORIGINS="${DEMO_ALLOWED_ORIGINS:-https://muzhao2333.github.io}" \
+nohup env CUDA_VISIBLE_DEVICES="${BACKEND_CUDA_VISIBLE_DEVICES:--1}" MOLECULAR_DEVICE="${MOLECULAR_DEVICE:-cpu}" MOLECULAR_CPU_THREADS="${MOLECULAR_CPU_THREADS:-4}" MODEL_CODE_REVISION="$model_revision" BACKEND_CODE_REVISION="$backend_revision" HOMEPAGE_ROOT="${HOMEPAGE_ROOT:-$(dirname "$backend_dir")}" DEMO_ALLOWED_ORIGINS="${DEMO_ALLOWED_ORIGINS:-https://muzhao2333.github.io}" \
   "$backend_python" -m uvicorn server:app --app-dir "$backend_dir" --host "${BACKEND_HOST:-127.0.0.1}" --port "${BACKEND_PORT:-7868}" --workers 1 \
   > "$backend_runtime/server.log" 2>&1 < /dev/null &
 echo "$!" > "$backend_runtime/server.pid"

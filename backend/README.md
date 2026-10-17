@@ -31,9 +31,9 @@ bash backend/start.sh
 bash backend/stop.sh
 ```
 
-Set `MOLRESEARCH_ROOT` for a different model checkout and `BACKEND_PYTHON` for
+Set `MODEL_ROOT` for a different model checkout and `BACKEND_PYTHON` for
 its installed interpreter. `BACKEND_HOST`, `BACKEND_PORT`, `BACKEND_RUNTIME`,
-`MOLRESEARCH_DEVICE`, `MOLRESEARCH_CPU_THREADS` and `DEMO_ALLOWED_ORIGINS` control
+`MOLECULAR_DEVICE`, `MOLECULAR_CPU_THREADS` and `DEMO_ALLOWED_ORIGINS` control
 deployment. Logs and the server PID stay in ignored `backend/runtime/`.
 
 The default loopback address is port 7868, behind an independently managed

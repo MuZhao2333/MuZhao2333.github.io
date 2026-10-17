@@ -16,7 +16,7 @@ import torch
 
 from molalign3d import engine as molalign3d_engine
 from molflae import engine as molflae_engine
-from molresearch.configuration import checkpoint_metadata
+from common.configuration import checkpoint_metadata
 
 CODE_REVISION = os.environ.get("MODEL_CODE_REVISION", "unrecorded")
 BACKEND_REVISION = os.environ.get("BACKEND_CODE_REVISION", "unrecorded")
@@ -48,7 +48,7 @@ class Engine:
     def __init__(self):
         for key, package in PACKAGES.items():
             logging.getLogger(__name__).info("%s inference source: %s", key, package.__file__)
-        requested = os.environ.get("MOLRESEARCH_DEVICE", "auto")
+        requested = os.environ.get("MOLECULAR_DEVICE", "auto")
         self.device = torch.device("cpu" if requested == "cpu" or not torch.cuda.is_available() else "cuda:0")
         self._engines = {}
         self.verified = set()
