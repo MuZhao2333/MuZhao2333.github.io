@@ -8,6 +8,44 @@
   const palette=["#6ae5d8","#b49aff","#f2c58a","#86adff","#f58db7","#92d69b","#d7a3fb","#71cbea","#e1b96f","#babef5"];
   const elementColors={H:"#cad8e9",C:"#bad0e9",N:"#83aaff",O:"#ff7c9b",F:"#6ae5bd",P:"#ffaf77",S:"#f5d474",Cl:"#6ae5bd",Br:"#d4946c",I:"#bd9aff"};
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const camera={homes:{},lastViews:{},muted:0,driver:'viewer-a',pose:{rotation:[0,0,0,1],pan:[0,0,0],distance:1}};
+
+  function withCameraMuted(action) {
+    camera.muted++;
+    try{return action();}finally{camera.muted--;}
+  }
+  function rememberView(id,view) {
+    camera.lastViews[id]=view.slice();
+  }
+  function cameraPose(id,view) {
+    const home=camera.homes[id],v=state.viewers[id];
+    return {rotation:view.slice(4,8),pan:view.slice(0,3).map((value,i)=>(value-home.center[i])/home.distance),
+      distance:(v.CAMERA_Z-view[3])/home.distance};
+  }
+  function applyCamera(id,pose) {
+    const home=camera.homes[id],v=state.viewers[id];if(!home)return;
+    const view=[...home.center.map((value,i)=>value+pose.pan[i]*home.distance),
+      v.CAMERA_Z-pose.distance*home.distance,...pose.rotation];
+    v.setView(view);rememberView(id,view);
+  }
+  function cameraChanged(id,view) {
+    const previous=camera.lastViews[id];rememberView(id,view);
+    if(camera.muted||!camera.homes[id]||!$('sync-views').checked)return;
+    // 3Dmol also calls this on hover and ordinary renders. Only a changed
+    // camera should drive peers, otherwise rendering causes feedback loops.
+    if(previous&&view.every((value,i)=>Math.abs(value-previous[i])<1e-10))return;
+    camera.driver=id;camera.pose=cameraPose(id,view);
+    withCameraMuted(()=>Object.keys(state.viewers).forEach(peer=>{if(peer!==id)applyCamera(peer,camera.pose);}));
+  }
+  function updateSpin() {
+    Object.values(state.viewers).forEach(v=>v.spin(false));
+    if(!$('auto-rotate').checked||document.hidden)return;
+    const ready=Object.keys(state.viewers).filter(id=>camera.homes[id]);
+    if($('sync-views').checked){
+      const driver=ready.includes(camera.driver)?camera.driver:ready[0];
+      if(driver)state.viewers[driver].spin('y',.45);
+    }else ready.forEach(id=>state.viewers[id].spin('y',.45));
+  }
 
   async function request(path,options={}) {
     if(location.protocol==="file:"&&!API)throw new Error("Open this demo through the running model server to connect to the trained checkpoints.");
@@ -67,9 +105,17 @@
       $(id).replaceChildren();
       state.viewers[id]=$3Dmol.createViewer($(id),{backgroundColor:'#0b1627',backgroundAlpha:0,antialias:true,minimumZoomToDistance:id==='viewer-z'?1e-5:3});
       state.viewers[id].setProjection('orthographic');
+      state.viewers[id].setViewChangeCallback(view=>cameraChanged(id,view));
+      const activate=()=>{
+        if(!camera.homes[id])return;
+        camera.driver=id;
+        if($('auto-rotate').checked)updateSpin();
+      };
+      $(id).addEventListener('pointerdown',activate);
+      $(id).addEventListener('touchstart',activate,{passive:true});
     }
     const v=state.viewers[id];
-    v.spin(false);v.removeAllModels();v.removeAllShapes();v.removeAllLabels();v.removeAllSurfaces();
+    withCameraMuted(()=>{v.spin(false);v.removeAllModels();v.removeAllShapes();v.removeAllLabels();v.removeAllSurfaces();});
     return v;
   }
   function addMolecule(v,molecule,override) {
@@ -90,10 +136,20 @@
     }
   }
   function finishViewer(v,previousView) {
-    v.resize();
-    if(previousView)v.setView(previousView);else{v.zoomTo();v.zoom(1.18);}
-    v.render();
-    if($('auto-rotate').checked&&!document.hidden)v.spin('y',.45);
+    const id=Object.keys(state.viewers).find(id=>state.viewers[id]===v);
+    withCameraMuted(()=>{
+      v.resize();
+      if(previousView)v.setView(previousView);
+      else{
+        v.zoomTo();v.zoom(1.18);
+        const home=v.getView();camera.homes[id]={center:home.slice(0,3),distance:v.getPerceivedDistance()};
+      }
+      // Normalize zoom and pan to each scene's fitted extent. Molecules and
+      // latent nodes can have very different coordinate ranges and centers.
+      if($('sync-views').checked)applyCamera(id,camera.pose);
+      v.render();rememberView(id,v.getView());
+    });
+    updateSpin();
   }
   function element(number) {
     return ({6:'C',7:'N',8:'O',9:'F',15:'P',16:'S',17:'Cl',35:'Br',53:'I'})[number]||'C';
@@ -407,9 +463,25 @@
     if(state.path?.b)drawMolecule('viewer-b',state.path.b,true);
     drawOutput(true);
   }));
-  $('auto-rotate').addEventListener('change',()=>Object.values(state.viewers).forEach(v=>v.spin($('auto-rotate').checked?'y':false,.45)));
+  $('auto-rotate').addEventListener('change',updateSpin);
+  $('sync-views').addEventListener('change',()=>{
+    if($('sync-views').checked){
+      const id=camera.homes[camera.driver]?camera.driver:Object.keys(camera.homes)[0];
+      if(id){
+        camera.pose=cameraPose(id,state.viewers[id].getView());
+        withCameraMuted(()=>Object.keys(state.viewers).forEach(peer=>applyCamera(peer,camera.pose)));
+      }
+    }
+    updateSpin();
+  });
   $('node-guides').addEventListener('change',()=>{if(state.latent)drawLatent(state.latent,true);});
-  $('reset-view').addEventListener('click',()=>Object.values(state.viewers).forEach(v=>{v.zoomTo();v.zoom(1.18);v.render();}));
+  $('reset-view').addEventListener('click',()=>{
+    camera.pose={rotation:[0,0,0,1],pan:[0,0,0],distance:1};
+    withCameraMuted(()=>Object.entries(state.viewers).forEach(([id,v])=>{
+      if(camera.homes[id])applyCamera(id,camera.pose);
+    }));
+    updateSpin();
+  });
   document.querySelectorAll('[data-focus]').forEach(button=>button.addEventListener('click',()=>{
     state.focus=state.focus===button.dataset.focus?null:button.dataset.focus;
     $('viewer-grid').classList.toggle('focused',!!state.focus);
@@ -423,8 +495,8 @@
     v.render();const a=document.createElement('a');a.href=v.pngURI();a.download=`${state.current?.model||'molecule'}-${id}.png`;a.click();
   });
   document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){stopPlayback();Object.values(state.viewers).forEach(v=>v.spin(false));}
-    else if($('auto-rotate').checked)Object.values(state.viewers).forEach(v=>v.spin('y',.45));
+    if(document.hidden)stopPlayback();
+    updateSpin();
   });
 
   const operations={reconstruction:'reconstruct',interpolation:'interpolate',wander:'wander','atom-edit':'atom-edit',swap:'swap'};
@@ -447,7 +519,9 @@
   $('model').addEventListener('change',()=>{modelDescription();invalidate();});
   modelDescription();
   function resizeViewers() {
-    Object.entries(state.viewers).forEach(([id,v])=>{if($(id).offsetWidth){v.resize();v.render();}});drawHeatmap();
+    withCameraMuted(()=>Object.entries(state.viewers).forEach(([id,v])=>{
+      if($(id).offsetWidth){v.resize();v.render();rememberView(id,v.getView());}
+    }));drawHeatmap();
   }
   window.addEventListener('resize',resizeViewers);
   if('ResizeObserver' in window)new ResizeObserver(resizeViewers).observe($('viewer-grid'));
