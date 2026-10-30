@@ -3,8 +3,15 @@
   const $=id=>document.getElementById(id);
   const API=(window.MOLECULAR_DEMO_API_BASE||"").replace(/\/$/,"");
   const mode=document.body.dataset.experiment||"reconstruction";
-  const state={mode,busy:false,connected:false,encoded:null,current:null,reconstruction:null,path:null,latent:null,models:[],viewers:{},style:"ballstick",selectedNode:null,playing:false,playTimer:null,focus:null,files:{a:"",b:""}};
-  const examples={aspirin:"CC(=O)Oc1ccccc1C(=O)O",caffeine:"Cn1c(=O)c2c(ncn2C)n(C)c1=O",phenacetin:"CCOc1ccc(NC(C)=O)cc1"};
+  const state={mode,busy:false,connected:false,encoded:null,current:null,reconstruction:null,path:null,latent:null,models:[],viewers:{},style:"ballstick",selectedNode:null,playing:false,playTimer:null,focus:null,files:{a:"",b:""},exampleFiles:{a:false,b:false},exampleLoads:{a:null,b:null},exampleTokens:{a:0,b:0}};
+  const examples={
+    aspirin:{smiles:"CC(=O)Oc1ccccc1C(=O)O",label:"Aspirin"},
+    caffeine:{smiles:"Cn1c(=O)c2c(ncn2C)n(C)c1=O",label:"Caffeine"},
+    phenacetin:{smiles:"CCOc1ccc(NC(C)=O)cc1",label:"Phenacetin"},
+    "zinc-test-01":{smiles:"CC(O)(CNC(=O)c1ccccn1)C1CCCS1",src:"examples/zinc-test-01.mol",label:"ZINC test 01"},
+    "zinc-test-02":{smiles:"O=C(C1CCCN1)N1CC2OCCN(Cc3ccccc3)C2C1",src:"examples/zinc-test-02.mol",label:"ZINC test 02"},
+    "zinc-test-03":{smiles:"O=C(Nc1ccccc1C(=O)N1CCCCC1)Oc1ccccc1",src:"examples/zinc-test-03.mol",label:"ZINC test 03"}
+  };
   const palette=["#6ae5d8","#b49aff","#f2c58a","#86adff","#f58db7","#92d69b","#d7a3fb","#71cbea","#e1b96f","#babef5"];
   const elementColors={H:"#cad8e9",C:"#bad0e9",N:"#83aaff",O:"#ff7c9b",F:"#6ae5bd",P:"#ffaf77",S:"#f5d474",Cl:"#6ae5bd",Br:"#d4946c",I:"#bd9aff"};
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -61,9 +68,11 @@
 
   function showError(error) {$('error').textContent=error.message||String(error);$('error').hidden=false;}
   function controls() {
-    $('experiment-controls').disabled=state.busy||!state.connected;
+    $('experiment-controls').disabled=state.busy;
+    $('run').disabled=state.busy||!state.connected;
+    $('encode-only').disabled=state.busy||!state.connected;
     document.querySelectorAll('[data-mode]').forEach(button=>{button.disabled=state.busy;});
-    $('decode').disabled=!state.encoded;
+    $('decode').disabled=state.busy||!state.connected||!state.encoded;
     $('overlay').disabled=!state.current?.decoded||state.mode!=="reconstruction";
     document.dispatchEvent(new CustomEvent('molecular-controls',{detail:{busy:state.busy,connected:state.connected}}));
   }
@@ -71,6 +80,37 @@
     state.encoded=null;
     $('decode').disabled=true;
     if(state.current||state.path)$('result-summary').textContent="Inputs changed — run again to update these results.";
+  }
+  function clearSelectedFile(suffix) {
+    state.exampleTokens[suffix]++;
+    state.files[suffix]='';
+    state.exampleFiles[suffix]=false;
+    state.exampleLoads[suffix]=null;
+    $(`sdf-${suffix}`).value='';
+    $(`file-name-${suffix}`).textContent='No file selected';
+    $(`clear-file-${suffix}`).hidden=true;
+  }
+  async function applyExample(key,suffix='a') {
+    const example=examples[key];if(!example)return;
+    clearSelectedFile(suffix);
+    $(`smiles-${suffix}`).value=example.smiles;
+    invalidate();
+    if(!example.src)return;
+    const token=state.exampleTokens[suffix];
+    const load=(async()=>{
+      const response=await fetch(example.src);
+      if(!response.ok)throw new Error(`Could not load the ${example.label} conformer (${response.status}).`);
+      const molblock=await response.text();
+      if(token!==state.exampleTokens[suffix])return;
+      state.files[suffix]=molblock;
+      state.exampleFiles[suffix]=true;
+      $(`file-name-${suffix}`).textContent=`${example.label} · archived ZINC test 3D conformer`;
+      $(`clear-file-${suffix}`).hidden=false;
+      invalidate();
+    })();
+    state.exampleLoads[suffix]=load;
+    await load;
+    if(state.exampleLoads[suffix]===load)state.exampleLoads[suffix]=null;
   }
   function modelDescription() {
     $('model-description').textContent=$('model').value==="molalign3d"?
@@ -362,6 +402,7 @@
   });
 
   async function moleculeInput(suffix) {
+    if(state.exampleLoads[suffix])await state.exampleLoads[suffix];
     if(state.files[suffix])return {smiles:'',molblock:state.files[suffix]};
     const smiles=$(`smiles-${suffix}`).value.trim();if(!smiles)throw new Error('Enter a SMILES string or upload a 3D molecule.');
     return {smiles,molblock:''};
@@ -514,20 +555,20 @@
   $('encode-only').addEventListener('click',()=>run(state.mode==='latent-space'?'latent-locate':'encode'));
   $('decode').addEventListener('click',()=>run('decode'));
   document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.mode)));
-  document.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{
-    $('smiles-a').value=examples[button.dataset.example];state.files.a='';$('sdf-a').value='';$('file-name-a').textContent='No file selected';$('clear-file-a').hidden=true;invalidate();
-  }));
+  document.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>applyExample(button.dataset.example).catch(showError)));
   for(const suffix of ['a','b']) {
-    $(`smiles-${suffix}`).addEventListener('input',invalidate);
+    $(`smiles-${suffix}`).addEventListener('input',()=>{if(state.exampleFiles[suffix]||state.exampleLoads[suffix])clearSelectedFile(suffix);invalidate();});
     $(`sdf-${suffix}`).addEventListener('change',async()=>{
       const file=$(`sdf-${suffix}`).files[0];if(!file)return;
       if(file.size>200000){showError(new Error('Please upload a file smaller than 200 KB.'));$(`sdf-${suffix}`).value='';return;}
-      state.files[suffix]=await file.text();$(`file-name-${suffix}`).textContent=`${file.name} · first molecule`;$(`clear-file-${suffix}`).hidden=false;invalidate();
+      clearSelectedFile(suffix);state.files[suffix]=await file.text();$(`file-name-${suffix}`).textContent=`${file.name} · first molecule`;$(`clear-file-${suffix}`).hidden=false;invalidate();
     });
-    $(`clear-file-${suffix}`).addEventListener('click',()=>{state.files[suffix]='';$(`sdf-${suffix}`).value='';$(`file-name-${suffix}`).textContent='No file selected';$(`clear-file-${suffix}`).hidden=true;invalidate();});
+    $(`clear-file-${suffix}`).addEventListener('click',()=>{clearSelectedFile(suffix);invalidate();});
   }
+  document.querySelectorAll('[data-default-example]').forEach(element=>applyExample(element.dataset.defaultExample).catch(showError));
   $('model').addEventListener('change',()=>{stopPlayback();modelDescription();invalidate();document.dispatchEvent(new CustomEvent('molecular-model',{detail:{model:$('model').value}}));});
   modelDescription();
+  controls();
   function resizeViewers() {
     withCameraMuted(()=>Object.entries(state.viewers).forEach(([id,v])=>{
       if($(id).offsetWidth){v.resize();v.render();rememberView(id,v.getView());}
@@ -539,7 +580,7 @@
     state.models=data.models;state.connected=true;
     const device=data.device==='Initialized on first inference'?(data.configured_device==='cuda'?'GPU ready':'Ready'):data.device;
     $('connection').textContent=`Model service connected · ${device} · real checkpoint inference`;$('connection').className='connection connected';controls();
-  }).catch(error=>{$('connection').textContent='Model service unavailable';$('connection').className='connection failed';showError(error);});
+  }).catch(error=>{$('connection').textContent='Model service unavailable';$('connection').className='connection failed';controls();showError(error);});
   const floating=document.createElement('div');floating.id='floating-controls';floating.className='floating-controls';floating.hidden=true;
   floating.innerHTML='<span class="floating-kicker">EXPERIMENT FRAME</span><button type="button" id="floating-prev" aria-label="Previous frame">←</button><button type="button" id="floating-play" aria-label="Play sequence" aria-pressed="false">▶</button><input type="range" id="floating-slider" min="0" max="1" value="0" step="1" aria-label="Experiment frame"><span id="floating-frame-label"></span><button type="button" id="floating-next" aria-label="Next frame">→</button>';
   document.body.append(floating);
